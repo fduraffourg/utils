@@ -1,0 +1,30 @@
+pkgname=openfaucet
+pkgver=20141207.73ac5ec
+pkgrel=1
+pkgdesc="Python OpenFlow library"
+arch=any
+url=https://github.com/rlenglet/openfaucet
+depends=('python2' 'python2-twisted' 'python2-zope-interface')
+makedepends=('git')
+optdepends=('python2-sphinx')
+
+source=('git://github.com/rlenglet/openfaucet.git')
+md5sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/$_pkgname"
+  git log -1 --format='%cd.%h' --date=short | tr -d - | sed 's/-/./'
+}
+
+build() {
+  cd "$srcdir/$pkgname"
+  ./bootstrap.sh
+  PYTHON=python2 ./configure --prefix=/usr
+  make
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  make DESTDIR="$pkgdir/" prefix=/usr install
+}
+
