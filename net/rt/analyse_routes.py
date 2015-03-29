@@ -168,6 +168,20 @@ class Prefix():
             if laddr == saddr:
                 return Prefix(addr = laddr, mask = mask)
 
+    def is_neighbor_to(self, other):
+        """
+        Return True if the given prefix is neighbor to this one
+        """
+
+        if self.addr + ( self.mask ^ 4294967295 ) + 1 == other.addr:
+            return True
+
+        if other.addr + ( other.mask ^ 4294967295 ) + 1 == self.addr:
+            return True
+
+        return False
+
+
 
     #
     # String conversion and class display
