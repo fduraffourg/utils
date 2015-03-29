@@ -4,6 +4,91 @@ import argparse
 import re
 
 #
+# Prefix Class
+#
+
+class Prefix():
+    """
+    Class used to work on prefixes.
+
+    Each prefix is composed of an address and a mask. Each of these items is saved with its string format for printing and with its binary format to operate on it. We also have the full string prefix for printing.
+
+    Here are the operations supported by this class:
+        - addition (+): the result of adding two prefix is the longest prefix containing the two prefixes
+    """
+
+    def __init__(self, string = None):
+        self.string = None
+        self.addr = None
+        self.mask = None
+        self.baddr = None
+        self.bmask = None
+
+        if string:
+            self._init_from_string(string)
+
+
+    re_init_from_string = re.compile("(\d+)\.(\d+)\.(\d+)\.(\d+)/(\d+)")
+    def _init_from_string(self, string):
+        """
+        Create the Prefix from its string representation
+        """
+
+        m = re_init_from_string.match(string)
+        if not m:
+            raise NameError("Bad string prefix input %s" % string)
+
+        ablocks = [ m.group(i) for i in range(1,5) ]
+        iablocks = map(int, ablocks)
+
+        for i in iablocks:
+            if i < 0 or i > 255:
+                raise NameError("Bad string prefix input %s" % string)
+
+        mask = m.group(5)
+        imask = int(mask)
+
+        if imask < 0 or imask > 32:
+            raise NameError("Bad string prefix input %s" % string)
+
+        self.string = string
+
+        self.addr = '.'.join(ablocks)
+        self.mask = mask
+
+        self.baddr = sum(map(lambda i,j: i * 256**j, iablocks, range(3, -1, -1)))
+        self.bmask = imask
+        
+
+    def __add__(self, other):
+        """
+        The addition of two prefixes returns the longest prefix containing the two prefixes
+        """
+
+        if self.bmask >= other.bmask:
+            l = self
+            s = other
+        else:
+            l = other
+            s = self
+
+    def __contains__(self, other):
+        """
+        Is the 'other' prefix inside this prefix?
+        """
+
+        if other.bmask < self.bmask:
+            return False
+
+        if self.baddr == ( other.baddr && self.bmask ):
+            return True
+
+        return False
+
+
+        
+
+#
 # RoutingTable Class
 #
 
