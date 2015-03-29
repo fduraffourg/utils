@@ -11,81 +11,188 @@ class Prefix():
     """
     Class used to work on prefixes.
 
-    Each prefix is composed of an address and a mask. Each of these items is saved with its string format for printing and with its binary format to operate on it. We also have the full string prefix for printing.
+    Each prefix is composed of an address and a mask encoded as int values.
 
     Here are the operations supported by this class:
+        - contains (in): the prefix contains the other prefix
         - addition (+): the result of adding two prefix is the longest prefix containing the two prefixes
     """
 
-    def __init__(self, string = None):
-        self.string = None
+    #
+    # Class variables
+    #
+
+    _re_init_from_string = re.compile("(\d+)\.(\d+)\.(\d+)\.(\d+)/(\d+)")
+    _all_masks = [0, 2147483648, 3221225472, 3758096384, 4026531840, 4160749568, 4227858432, 4261412864, 4278190080, 4286578688, 4290772992, 4292870144, 4293918720, 4294443008, 4294705152, 4294836224, 4294901760, 4294934528, 4294950912, 4294959104, 4294963200, 4294965248, 4294966272, 4294966784, 4294967040, 4294967168, 4294967232, 4294967264, 4294967280, 4294967288, 4294967292, 4294967294, 4294967295]
+
+
+    #
+    # Init functions
+    #
+
+    def __init__(self, string = None, addr = None, mask = None, lenmask = None):
         self.addr = None
         self.mask = None
-        self.baddr = None
-        self.bmask = None
+        self._straddr = None
+        self._lenmask = None
+        self._str = None
 
         if string:
             self._init_from_string(string)
+            return
+
+        if mask and addr:
+            self._init_from_addr_mask(addr, mask)
+            return
+
+        if addr and lenmask:
+            mask = self.mask_from_lenmask(lenmask)
+            self._init_from_addr_mask(addr, mask)
+            return
+
+        raise NameError("Bad parameters given")
 
 
-    re_init_from_string = re.compile("(\d+)\.(\d+)\.(\d+)\.(\d+)/(\d+)")
+
     def _init_from_string(self, string):
         """
         Create the Prefix from its string representation
         """
 
-        m = re_init_from_string.match(string)
+        m = self._re_init_from_string.match(string)
         if not m:
             raise NameError("Bad string prefix input %s" % string)
 
         ablocks = [ m.group(i) for i in range(1,5) ]
-        iablocks = map(int, ablocks)
+        iablocks = [ i for i in map(int, ablocks)]
 
         for i in iablocks:
             if i < 0 or i > 255:
                 raise NameError("Bad string prefix input %s" % string)
 
-        mask = m.group(5)
-        imask = int(mask)
+        lenmask = int(m.group(5))
 
-        if imask < 0 or imask > 32:
+        if lenmask < 0 or lenmask > 32:
             raise NameError("Bad string prefix input %s" % string)
 
-        self.string = string
 
-        self.addr = '.'.join(ablocks)
+        addr = sum(map(lambda i,j: i * 256**j, iablocks, range(3, -1, -1)))
+        mask = self.mask_from_lenmask(lenmask)
+
+        addr = addr & mask
+
+        self.addr = addr
+        self.mask = mask
+        self._lenmask = lenmask
+
+    def _init_from_addr_mask(self, addr, mask):
+        """
+        Initialize the Prefix from its address and mask
+        """
+
+        if not self.is_mask(mask):
+            raise NameError("Bad mask %d -> %s" % (mask, bin(mask)))
+
+        self.addr = addr & mask
         self.mask = mask
 
-        self.baddr = sum(map(lambda i,j: i * 256**j, iablocks, range(3, -1, -1)))
-        self.bmask = imask
         
+    #
+    # Toolbox
+    #
 
-    def __add__(self, other):
+    @staticmethod
+    def mask_from_lenmask(lenmask):
         """
-        The addition of two prefixes returns the longest prefix containing the two prefixes
+        Return the binary (int value) form of the mask from the mask length
         """
+        if lenmask < 0 or lenmask > 32:
+            raise NameError("Bad lenmask %d" % lenmask)
 
-        if self.bmask >= other.bmask:
-            l = self
-            s = other
-        else:
-            l = other
-            s = self
+        return sum([2**(31-i) for i in range(0,lenmask)])
+
+    @classmethod
+    def is_mask(self, mask):
+        """
+        Check if a mask is correct
+        """
+        return mask in self._all_masks
+
+    @classmethod
+    def lenmask_from_mask(self, mask):
+        for l, m in enumerate(self._all_masks):
+            if m == mask:
+                return l
+
+
+    #
+    # Operation functions
+    #
 
     def __contains__(self, other):
         """
         Is the 'other' prefix inside this prefix?
         """
 
-        if other.bmask < self.bmask:
+        if other.lenmask() < self.lenmask():
             return False
 
-        if self.baddr == ( other.baddr && self.bmask ):
+        if self.addr == ( other.addr & self.mask ):
             return True
 
         return False
 
 
+    def __add__(self, other):
+        """
+        The addition of two prefixes returns the longest prefix containing the two prefixes
+        """
+
+        if self.lenmask() >= other.lenmask():
+            l = self
+            s = other
+        else:
+            l = other
+            s = self
+
+        if l in s:
+            return s
+
+        for i in range(s.lenmask(), -1, -1):
+            mask = self.mask_from_lenmask(i)
+            laddr = l.addr & mask
+            saddr = s.addr & mask
+            if laddr == saddr:
+                return Prefix(addr = laddr, mask = mask)
+
+
+    #
+    # String conversion and class display
+    #
+
+    def straddr(self):
+        if not self._straddr:
+            self._compute_straddr()
+        return self._straddr
+
+    def _compute_straddr(self):
+        ablocks = [ self.addr // (256**i) % 256 for i in range(3, -1, -1) ]
+        self._straddr = '.'.join(map(str, ablocks))
+
+    def lenmask(self):
+        if not self._lenmask:
+            self._compute_lenmask()
+        return self._lenmask
+
+    def _compute_lenmask(self):
+        self._lenmask = self.lenmask_from_mask(self.mask)
+
+
+    def __str__(self):
+        return "%s/%d" % (self.straddr(), self.lenmask())
+
+    def __repr__(self):
+        return "<Prefix %s>" % self.__str__()
         
 
 #
