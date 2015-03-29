@@ -129,6 +129,9 @@ class Prefix():
     # Operation functions
     #
 
+    def __eq__(self, other):
+        return self.mask == other.mask and self.addr == other.addr
+
     def __contains__(self, other):
         """
         Is the 'other' prefix inside this prefix?
@@ -196,6 +199,14 @@ class Prefix():
         
 
 #
+# Route Class
+#
+
+class Route():
+    def __init__(self):
+        pass
+
+#
 # RoutingTable Class
 #
 
@@ -211,9 +222,18 @@ class RoutingTable():
 
         else:
             self.routes[prefix] = {
-                    'prefix': prefix,
+                    'prefix': Prefix(string=prefix),
                     'nexthop': [nexthop]
                     }
+
+    def get_all_routes(self):
+        for _, v in self.routes.items():
+            yield v
+
+    def get_all_prefixes(self):
+        for _, v in self.routes.items():
+            yield v['prefix']
+
 
 #
 # File parsing
@@ -233,7 +253,10 @@ def analyse_line(line, rt):
     if m:
         prefix = m.group('prefix')
         nexthop = m.group('nexthop')
-        rt.add_route(prefix, nexthop)
+        try:
+            rt.add_route(prefix, nexthop)
+        except:
+            print("Error with line '%s'" % line.strip())
     else:
         print(line)
 
@@ -246,6 +269,7 @@ class Statistics():
     def __init__(self, rt):
         self.rt = rt
         self.rt_len = None
+        self.rt_supernet = None
         self.unique_nexthop = None
 
     ## Stats on routing table length
@@ -258,6 +282,15 @@ class Statistics():
     def print_rt_len(self):
         print("There is %d routes" % self.get_rt_len())
 
+
+    def get_rt_supernet(self):
+        if not self.rt_supernet:
+            prefixes = self.rt.get_all_prefixes()
+            self.rt_supernet = sum(prefixes, prefixes.__next__())
+        return self.rt_supernet
+
+    def print_rt_supernet(self):
+        print("The supernet is %s" % self.get_rt_supernet())
 
     ## Stats on unique next hops
 
@@ -281,6 +314,42 @@ class Statistics():
 
         self.unique_nexthop = list_nh
 
+    ## Stats on more specific routes
+
+    def get_more_specific_routes(self):
+        msr = []
+        msr_dup = []
+
+        routes = list(self.rt.get_all_routes())
+
+        for specific in routes:
+            sp = specific['prefix']
+            containers = []
+
+            for generic in routes:
+                gp = generic['prefix']
+
+                if sp in gp and not sp == gp:
+                    containers.append(gp)
+
+                    if specific['nexthop'] == generic['nexthop']:
+                        msr_dup.append((sp, gp))
+
+            if len(containers) > 0:
+                msr.append((sp, containers))
+
+        return msr, msr_dup
+
+    def print_more_specific_routes(self):
+        msr, msr_dup = self.get_more_specific_routes()
+
+        print("There are %d more specific routes" % len(msr))
+        print("There are %d more specific routes with same nexthop" % len(msr_dup))
+
+
+
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Analyse route table dump')
@@ -295,4 +364,6 @@ if __name__ == '__main__':
         rt = analyse_file(filename)
         stats = Statistics(rt)
         stats.print_rt_len()
+        stats.print_rt_supernet()
         stats.print_unique_nexthop()
+        stats.print_more_specific_routes()
