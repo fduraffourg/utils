@@ -218,7 +218,11 @@ class Prefix():
 
 class Route():
     def __init__(self):
-        pass
+        self.prefix = None
+        self.nexthop = None
+
+    def __repr__(self):
+        return "<Route %s>" % str(self.prefix)
 
 #
 # RoutingTable Class
@@ -247,6 +251,84 @@ class RoutingTable():
     def get_all_prefixes(self):
         for _, v in self.routes.items():
             yield v['prefix']
+
+
+#########################
+# RoutingTableTree objs #
+#########################
+
+#
+# RoutingTableNode Class
+#
+
+class RoutingTableNode():
+    def __init__(self, parent):
+        self.parent = parent
+        self.leafs = [None, None]
+        self.route = None
+
+
+    def search(self, path, create = False):
+        """
+        Search for the Node at the given path
+
+        If 'create' is set to False (default) return None at the first none existant Node.
+        If 'create' is set to True, create all the Nodes until the destination is found.
+        """
+
+        if len(path) == 0:
+            return self
+
+        nn = self.leafs[path[0]]
+        if not nn:
+            if not create:
+                return nn
+
+            nn = RoutingTableNode(self)
+            self.leafs[path[0]] = nn
+
+        return nn.search(path[1:], create)
+
+
+    def draw(self, level):
+        print ("%sNode with route %s" % (level * ' ', self.route))
+        for i in (0,1):
+            node = self.leafs[i]
+            if node:
+                node.draw(level + 1)
+
+
+
+
+#
+# RoutingTableTree Class
+#
+
+class RoutingTableTree():
+    def __init__(self):
+        self.root = RoutingTableNode(None)
+
+    def insert_route(self, route):
+        path = self.path_from_prefix(route.prefix)
+        node = self.root.search(path, create = True)
+        node.route = route
+        return node
+
+
+    #
+    # Toolbox
+    #
+
+    @staticmethod
+    def path_from_prefix(prefix):
+        addr = prefix.addr
+        lenmask = prefix.lenmask()
+        return [ ( addr &  2 ** i  ) >> i for i in range(31, 32 - lenmask - 1, -1) ]
+
+
+    def draw(self):
+        self.root.draw(1)
+
 
 
 #
