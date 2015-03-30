@@ -77,11 +77,11 @@ class Prefix():
             self._init_from_string(string)
             return
 
-        if mask and addr:
+        if None not in (mask, addr):
             self._init_from_addr_mask(addr, mask)
             return
 
-        if addr and lenmask:
+        if None not in (lenmask, addr):
             mask = self.mask_from_lenmask(lenmask)
             self._init_from_addr_mask(addr, mask)
             return
