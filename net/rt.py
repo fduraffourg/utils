@@ -296,11 +296,29 @@ class RoutingTableTree():
     def __init__(self):
         self.root = RoutingTableNode(None)
 
-    def insert_route(self, route):
+    def insert(self, route):
         path = self.path_from_prefix(route.prefix)
         node = self.root.search(path, create=True)
         node.route = route
         return node
+
+    def search(self, prefix=None, route=None, create=False):
+        """
+        Search for a give route or prefix. Returns a RoutingTableNode.
+
+        If create is False (default) returns None if the route does not
+        exists. Otherwise create it and return a blank node.
+        """
+        path = None
+        if prefix:
+            path = self.path_from_prefix(prefix)
+        if route:
+            path = self.path_from_prefix(route.prefix)
+
+        if not path:
+            raise NameError("prefix or route must be specified")
+
+        return self.root.search(path, create=True)
 
     #
     # Toolbox
@@ -314,35 +332,6 @@ class RoutingTableTree():
 
     def draw(self):
         self.root.draw(1)
-
-#
-# File parsing
-#
-
-
-def analyse_file(filename):
-    rt = RoutingTable()
-    with open(filename, 'r') as fd:
-        for line in fd:
-            analyse_line(line, rt)
-
-    return rt
-
-RELINE = re.compile("^[0-9]*\s*(?P<prefix>[0-9./]+)\s*(?P<nexthop>[0-9.]*)\s*.*$")
-
-
-def analyse_line(line, rt):
-    m = RELINE.match(line)
-    if m:
-        prefix = m.group('prefix')
-        nexthop = m.group('nexthop')
-        try:
-            rt.add_route(prefix, nexthop)
-        except:
-            print("Error with line '%s'" % line.strip())
-    else:
-        print(line)
-
 
 #
 # Statistics
@@ -428,19 +417,3 @@ class Statistics():
         print("There are %d more specific routes" % len(msr))
         print("There are %d more specific routes with same nexthop" % len(msr_dup))
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Analyse route table dump')
-    parser.add_argument('files', metavar='F', type=str, nargs='+',
-                        help='list of files')
-
-    args = parser.parse_args()
-
-    for filename in args.files:
-        print("\n=========================\nFile %s\n" % filename)
-        rt = analyse_file(filename)
-        stats = Statistics(rt)
-        stats.print_rt_len()
-        stats.print_rt_supernet()
-        stats.print_unique_nexthop()
-        stats.print_more_specific_routes()
