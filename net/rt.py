@@ -1,6 +1,5 @@
 #!/bin/env python
 
-import argparse
 import re
 
 #
@@ -24,8 +23,41 @@ class Prefix():
     # Class variables
     #
 
-    _re_init_from_string = re.compile("(\d+)\.(\d+)\.(\d+)\.(\d+)/(\d+)")
-    _all_masks = [0, 2147483648, 3221225472, 3758096384, 4026531840, 4160749568, 4227858432, 4261412864, 4278190080, 4286578688, 4290772992, 4292870144, 4293918720, 4294443008, 4294705152, 4294836224, 4294901760, 4294934528, 4294950912, 4294959104, 4294963200, 4294965248, 4294966272, 4294966784, 4294967040, 4294967168, 4294967232, 4294967264, 4294967280, 4294967288, 4294967292, 4294967294, 4294967295]
+    _re_init_from_string = re.compile(r"(\d+)\.(\d+)\.(\d+)\.(\d+)/(\d+)")
+    _all_masks = [0,
+                  2147483648,
+                  3221225472,
+                  3758096384,
+                  4026531840,
+                  4160749568,
+                  4227858432,
+                  4261412864,
+                  4278190080,
+                  4286578688,
+                  4290772992,
+                  4292870144,
+                  4293918720,
+                  4294443008,
+                  4294705152,
+                  4294836224,
+                  4294901760,
+                  4294934528,
+                  4294950912,
+                  4294959104,
+                  4294963200,
+                  4294965248,
+                  4294966272,
+                  4294966784,
+                  4294967040,
+                  4294967168,
+                  4294967232,
+                  4294967264,
+                  4294967280,
+                  4294967288,
+                  4294967292,
+                  4294967294,
+                  4294967295,
+                 ]
 
     #
     # Init functions
@@ -58,18 +90,18 @@ class Prefix():
         Create the Prefix from its string representation
         """
 
-        m = self._re_init_from_string.match(string)
-        if not m:
+        match = self._re_init_from_string.match(string)
+        if not match:
             raise NameError("Bad string prefix input %s" % string)
 
-        ablocks = [m.group(i) for i in range(1, 5)]
-        iablocks = [i for i in map(int, ablocks)]
+        ablocks = [match.group(i) for i in range(1, 5)]
+        iablocks = [int(a) for a in ablocks]
 
         for i in iablocks:
             if i < 0 or i > 255:
                 raise NameError("Bad string prefix input %s" % string)
 
-        lenmask = int(m.group(5))
+        lenmask = int(match.group(5))
 
         if lenmask < 0 or lenmask > 32:
             raise NameError("Bad string prefix input %s" % string)
@@ -109,15 +141,15 @@ class Prefix():
         return sum([2**(31-i) for i in range(0, lenmask)])
 
     @classmethod
-    def is_mask(self, mask):
+    def is_mask(cls, mask):
         """
         Check if a mask is correct
         """
-        return mask in self._all_masks
+        return mask in cls._all_masks
 
     @classmethod
-    def lenmask_from_mask(self, mask):
-        for l, m in enumerate(self._all_masks):
+    def lenmask_from_mask(cls, mask):
+        for l, m in enumerate(cls._all_masks):
             if m == mask:
                 return l
 
@@ -187,7 +219,7 @@ class Prefix():
 
     def _compute_straddr(self):
         ablocks = [self.addr // (256**i) % 256 for i in range(3, -1, -1)]
-        self._straddr = '.'.join(map(str, ablocks))
+        self._straddr = '.'.join([str(a) for a in ablocks])
 
     def lenmask(self):
         if not self._lenmask:
@@ -232,9 +264,9 @@ class RoutingTable():
 
         else:
             self.routes[prefix] = {
-                    'prefix': Prefix(string=prefix),
-                    'nexthop': [nexthop]
-                    }
+                'prefix': Prefix(string=prefix),
+                'nexthop': [nexthop],
+                }
 
     def get_all_routes(self):
         for _, v in self.routes.items():
@@ -303,7 +335,7 @@ class RoutingTableNode():
         Print a very simple representation of this node.
         Level indicate the indentation level to use
         """
-        print ("%sNode with route %s" % (level * ' ', self.route))
+        print("%sNode with route %s" % (level * ' ', self.route))
         for i in (0, 1):
             node = self.leafs[i]
             if node:
@@ -340,7 +372,7 @@ class RoutingTableTree():
         if not path:
             raise NameError("prefix or route must be specified")
 
-        return self.root.search(path, create=True)
+        return self.root.search(path, create)
 
     def count(self, blank=False):
         """
@@ -409,7 +441,7 @@ class Statistics():
 
     def _compute_unique_nexthop(self):
         list_nh = []
-        for p, route in self.rt.routes.items():
+        for _, route in self.rt.routes.items():
             nexthop = route['nexthop']
             if nexthop not in list_nh:
                 list_nh.append(nexthop)
