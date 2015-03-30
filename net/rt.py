@@ -280,7 +280,29 @@ class RoutingTableNode():
 
         return nn.search(path[1:], create)
 
+    def count(self, blank=False):
+        """
+        Count nodes
+
+        If blank is False (default), count only non blank nodes
+        """
+        count = 0
+
+        if blank or self.route:
+            count += 1
+
+        for i in range(0, 2):
+            leaf = self.leafs[i]
+            if leaf:
+                count += leaf.count(blank)
+
+        return count
+
     def draw(self, level):
+        """
+        Print a very simple representation of this node.
+        Level indicate the indentation level to use
+        """
         print ("%sNode with route %s" % (level * ' ', self.route))
         for i in (0, 1):
             node = self.leafs[i]
@@ -320,6 +342,14 @@ class RoutingTableTree():
 
         return self.root.search(path, create=True)
 
+    def count(self, blank=False):
+        """
+        Count the number of Nodes on the tree.
+
+        If blank is False (default) only count Node that have a route
+        """
+        return self.root.count(blank=blank)
+
     #
     # Toolbox
     #
@@ -336,6 +366,7 @@ class RoutingTableTree():
 #
 # Statistics
 #
+
 
 class Statistics():
     def __init__(self, rt):
@@ -378,7 +409,7 @@ class Statistics():
 
     def _compute_unique_nexthop(self):
         list_nh = []
-        for p, route in rt.routes.items():
+        for p, route in self.rt.routes.items():
             nexthop = route['nexthop']
             if nexthop not in list_nh:
                 list_nh.append(nexthop)
@@ -416,4 +447,3 @@ class Statistics():
 
         print("There are %d more specific routes" % len(msr))
         print("There are %d more specific routes with same nexthop" % len(msr_dup))
-
