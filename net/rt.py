@@ -1,4 +1,7 @@
 #!/bin/env python
+"""
+Network objects
+"""
 
 import re
 
@@ -149,6 +152,9 @@ class Prefix():
 
     @classmethod
     def lenmask_from_mask(cls, mask):
+        """
+        Return the mask length from the binary mask
+        """
         for l, m in enumerate(cls._all_masks):
             if m == mask:
                 return l
@@ -213,20 +219,32 @@ class Prefix():
     #
 
     def straddr(self):
+        """
+        Return the prefix address as a string
+        """
         if not self._straddr:
             self._compute_straddr()
         return self._straddr
 
     def _compute_straddr(self):
+        """
+        Compute the the address as a string
+        """
         ablocks = [self.addr // (256**i) % 256 for i in range(3, -1, -1)]
         self._straddr = '.'.join([str(a) for a in ablocks])
 
     def lenmask(self):
+        """
+        Return the prefix mask as a length value
+        """
         if not self._lenmask:
             self._compute_lenmask()
         return self._lenmask
 
     def _compute_lenmask(self):
+        """
+        Compute the mask length
+        """
         self._lenmask = self.lenmask_from_mask(self.mask)
 
     def __str__(self):
@@ -241,9 +259,17 @@ class Prefix():
 
 
 class Route():
-    def __init__(self):
+    """
+    Route Class
+    """
+    def __init__(self, prefix=None, nexthop=None):
         self.prefix = None
         self.nexthop = None
+
+        if isinstance(prefix, str):
+            self.prefix = Prefix(string=prefix)
+        if isinstance(prefix, Prefix):
+            self.prefix = prefix
 
     def __repr__(self):
         return "<Route %s>" % str(self.prefix)
@@ -326,9 +352,22 @@ class RoutingTableNode():
         for i in range(0, 2):
             leaf = self.leafs[i]
             if leaf:
-                count += leaf.count(blank)
+                count += leaf.count(blank=blank)
 
         return count
+
+    def all_nodes(self, blank=False):
+        """
+        Yield all nodes
+        """
+        for i in range(0, 2):
+            leaf = self.leafs[i]
+            if leaf:
+                for node in leaf.all_nodes(blank=blank):
+                    yield node
+
+        if blank or self.route:
+            yield self
 
     def draw(self, level):
         """
@@ -340,10 +379,6 @@ class RoutingTableNode():
             node = self.leafs[i]
             if node:
                 node.draw(level + 1)
-
-#
-# RoutingTableTree Class
-#
 
 
 class RoutingTableTree():
@@ -372,7 +407,7 @@ class RoutingTableTree():
         if not path:
             raise NameError("prefix or route must be specified")
 
-        return self.root.search(path, create)
+        return self.root.search(path, create=create)
 
     def count(self, blank=False):
         """
@@ -381,6 +416,15 @@ class RoutingTableTree():
         If blank is False (default) only count Node that have a route
         """
         return self.root.count(blank=blank)
+
+    def all_nodes(self, blank=False):
+        """
+        Return a generator yielding all nodes.
+
+        If blank is False (default) only yield non blank nodes
+        """
+        for node in self.root.all_nodes(blank=blank):
+            yield node
 
     #
     # Toolbox
