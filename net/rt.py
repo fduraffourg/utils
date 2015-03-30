@@ -7,6 +7,7 @@ import re
 # Prefix Class
 #
 
+
 class Prefix():
     """
     Class used to work on prefixes.
@@ -15,7 +16,8 @@ class Prefix():
 
     Here are the operations supported by this class:
         - contains (in): the prefix contains the other prefix
-        - addition (+): the result of adding two prefix is the longest prefix containing the two prefixes
+        - addition (+): the result of adding two prefix is the longest prefix
+          containing the two prefixes
     """
 
     #
@@ -25,12 +27,11 @@ class Prefix():
     _re_init_from_string = re.compile("(\d+)\.(\d+)\.(\d+)\.(\d+)/(\d+)")
     _all_masks = [0, 2147483648, 3221225472, 3758096384, 4026531840, 4160749568, 4227858432, 4261412864, 4278190080, 4286578688, 4290772992, 4292870144, 4293918720, 4294443008, 4294705152, 4294836224, 4294901760, 4294934528, 4294950912, 4294959104, 4294963200, 4294965248, 4294966272, 4294966784, 4294967040, 4294967168, 4294967232, 4294967264, 4294967280, 4294967288, 4294967292, 4294967294, 4294967295]
 
-
     #
     # Init functions
     #
 
-    def __init__(self, string = None, addr = None, mask = None, lenmask = None):
+    def __init__(self, string=None, addr=None, mask=None, lenmask=None):
         self.addr = None
         self.mask = None
         self._straddr = None
@@ -52,8 +53,6 @@ class Prefix():
 
         raise NameError("Bad parameters given")
 
-
-
     def _init_from_string(self, string):
         """
         Create the Prefix from its string representation
@@ -63,8 +62,8 @@ class Prefix():
         if not m:
             raise NameError("Bad string prefix input %s" % string)
 
-        ablocks = [ m.group(i) for i in range(1,5) ]
-        iablocks = [ i for i in map(int, ablocks)]
+        ablocks = [m.group(i) for i in range(1, 5)]
+        iablocks = [i for i in map(int, ablocks)]
 
         for i in iablocks:
             if i < 0 or i > 255:
@@ -75,8 +74,7 @@ class Prefix():
         if lenmask < 0 or lenmask > 32:
             raise NameError("Bad string prefix input %s" % string)
 
-
-        addr = sum(map(lambda i,j: i * 256**j, iablocks, range(3, -1, -1)))
+        addr = sum(map(lambda i, j: i * 256**j, iablocks, range(3, -1, -1)))
         mask = self.mask_from_lenmask(lenmask)
 
         addr = addr & mask
@@ -96,7 +94,6 @@ class Prefix():
         self.addr = addr & mask
         self.mask = mask
 
-        
     #
     # Toolbox
     #
@@ -109,7 +106,7 @@ class Prefix():
         if lenmask < 0 or lenmask > 32:
             raise NameError("Bad lenmask %d" % lenmask)
 
-        return sum([2**(31-i) for i in range(0,lenmask)])
+        return sum([2**(31-i) for i in range(0, lenmask)])
 
     @classmethod
     def is_mask(self, mask):
@@ -123,7 +120,6 @@ class Prefix():
         for l, m in enumerate(self._all_masks):
             if m == mask:
                 return l
-
 
     #
     # Operation functions
@@ -140,11 +136,10 @@ class Prefix():
         if other.lenmask() < self.lenmask():
             return False
 
-        if self.addr == ( other.addr & self.mask ):
+        if self.addr == other.addr & self.mask:
             return True
 
         return False
-
 
     def __add__(self, other):
         """
@@ -166,22 +161,20 @@ class Prefix():
             laddr = l.addr & mask
             saddr = s.addr & mask
             if laddr == saddr:
-                return Prefix(addr = laddr, mask = mask)
+                return Prefix(addr=laddr, mask=mask)
 
     def is_neighbor_to(self, other):
         """
         Return True if the given prefix is neighbor to this one
         """
 
-        if self.addr + ( self.mask ^ 4294967295 ) + 1 == other.addr:
+        if self.addr + (self.mask ^ 4294967295) + 1 == other.addr:
             return True
 
-        if other.addr + ( other.mask ^ 4294967295 ) + 1 == self.addr:
+        if other.addr + (other.mask ^ 4294967295) + 1 == self.addr:
             return True
 
         return False
-
-
 
     #
     # String conversion and class display
@@ -193,7 +186,7 @@ class Prefix():
         return self._straddr
 
     def _compute_straddr(self):
-        ablocks = [ self.addr // (256**i) % 256 for i in range(3, -1, -1) ]
+        ablocks = [self.addr // (256**i) % 256 for i in range(3, -1, -1)]
         self._straddr = '.'.join(map(str, ablocks))
 
     def lenmask(self):
@@ -204,17 +197,16 @@ class Prefix():
     def _compute_lenmask(self):
         self._lenmask = self.lenmask_from_mask(self.mask)
 
-
     def __str__(self):
         return "%s/%d" % (self.straddr(), self.lenmask())
 
     def __repr__(self):
         return "<Prefix %s>" % self.__str__()
-        
 
 #
 # Route Class
 #
+
 
 class Route():
     def __init__(self):
@@ -228,10 +220,10 @@ class Route():
 # RoutingTable Class
 #
 
+
 class RoutingTable():
     def __init__(self):
         self.routes = dict()
-
 
     def add_route(self, prefix, nexthop):
         if prefix in self.routes:
@@ -267,8 +259,7 @@ class RoutingTableNode():
         self.leafs = [None, None]
         self.route = None
 
-
-    def search(self, path, create = False):
+    def search(self, path, create=False):
         """
         Search for the Node at the given path
 
@@ -289,20 +280,17 @@ class RoutingTableNode():
 
         return nn.search(path[1:], create)
 
-
     def draw(self, level):
         print ("%sNode with route %s" % (level * ' ', self.route))
-        for i in (0,1):
+        for i in (0, 1):
             node = self.leafs[i]
             if node:
                 node.draw(level + 1)
 
-
-
-
 #
 # RoutingTableTree Class
 #
+
 
 class RoutingTableTree():
     def __init__(self):
@@ -310,10 +298,9 @@ class RoutingTableTree():
 
     def insert_route(self, route):
         path = self.path_from_prefix(route.prefix)
-        node = self.root.search(path, create = True)
+        node = self.root.search(path, create=True)
         node.route = route
         return node
-
 
     #
     # Toolbox
@@ -323,17 +310,15 @@ class RoutingTableTree():
     def path_from_prefix(prefix):
         addr = prefix.addr
         lenmask = prefix.lenmask()
-        return [ ( addr &  2 ** i  ) >> i for i in range(31, 32 - lenmask - 1, -1) ]
-
+        return [(addr & 2 ** i) >> i for i in range(31, 32 - lenmask - 1, -1)]
 
     def draw(self):
         self.root.draw(1)
 
-
-
 #
 # File parsing
 #
+
 
 def analyse_file(filename):
     rt = RoutingTable()
@@ -344,6 +329,8 @@ def analyse_file(filename):
     return rt
 
 RELINE = re.compile("^[0-9]*\s*(?P<prefix>[0-9./]+)\s*(?P<nexthop>[0-9.]*)\s*.*$")
+
+
 def analyse_line(line, rt):
     m = RELINE.match(line)
     if m:
@@ -368,8 +355,8 @@ class Statistics():
         self.rt_supernet = None
         self.unique_nexthop = None
 
-    ## Stats on routing table length
-    
+    # Stats on routing table length
+
     def get_rt_len(self):
         if not self.rt_len:
             self.rt_len = len(self.rt.routes)
@@ -377,7 +364,6 @@ class Statistics():
 
     def print_rt_len(self):
         print("There is %d routes" % self.get_rt_len())
-
 
     def get_rt_supernet(self):
         if not self.rt_supernet:
@@ -388,7 +374,7 @@ class Statistics():
     def print_rt_supernet(self):
         print("The supernet is %s" % self.get_rt_supernet())
 
-    ## Stats on unique next hops
+    # Stats on unique next hops
 
     def get_unique_nexthop(self):
         if not self.unique_nexthop:
@@ -410,7 +396,7 @@ class Statistics():
 
         self.unique_nexthop = list_nh
 
-    ## Stats on more specific routes
+    # Stats on more specific routes
 
     def get_more_specific_routes(self):
         msr = []
@@ -443,17 +429,12 @@ class Statistics():
         print("There are %d more specific routes with same nexthop" % len(msr_dup))
 
 
-
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Analyse route table dump')
     parser.add_argument('files', metavar='F', type=str, nargs='+',
-                               help='list of files')
+                        help='list of files')
 
     args = parser.parse_args()
-
 
     for filename in args.files:
         print("\n=========================\nFile %s\n" % filename)
