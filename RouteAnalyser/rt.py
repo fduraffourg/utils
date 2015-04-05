@@ -404,7 +404,7 @@ class RoutingTableTree():
         if route:
             path = self.path_from_prefix(route.prefix)
 
-        if not path:
+        if path is None:
             raise NameError("prefix or route must be specified")
 
         return self.root.search(path, create=create)
