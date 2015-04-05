@@ -40,6 +40,22 @@ class NextHopIPInt( NextHop ):
     def __repr__(self):
         return "<NextHopIPInt %s '%s'>" % (self.ip, self.interface)
 
+class NextHopLDP( NextHop ):
+    """
+    NextHop composed of an LDP tunnel
+    """
+
+    def __init__(self, tunnel_id):
+        self.tunnel_id = tunnel_id
+
+    def __eq__(self, other):
+        if not isinstance(other, NextHopLDP):
+            return False
+        return self.tunnel_id == other.tunnel_id
+
+    def __repr__(self):
+        return "<NextHopLDP LDP(%d)>" % self.tunnel_id
+
 #
 # Route Class
 #

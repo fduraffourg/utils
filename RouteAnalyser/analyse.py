@@ -29,13 +29,14 @@ def analyse_file(filename):
             route.add_nexthop(nexthop)
 
             if i % 1000 == 0:
-                print("\r%d" % i, end="", flush=True)
+                print("%d" % i, end="\r", flush=True)
             i += 1
 
     return rtree
 
 RELINE = re.compile(r"^[0-9]*\s*(?P<prefix>[0-9./]+)\s*(?P<nexthop>.*)$")
 RENHIPINT = re.compile(r"^(?P<ip>[0-9.]+)\s*(?P<int>\w* [0-9/a-zA-Z]*).*$")
+RENHLDP = re.compile(r"^DIRECT\s*LDP \((?P<id>\d*)\).*$")
 
 def analyse_line(line, rtree):
     mline = RELINE.match(line)
@@ -47,8 +48,15 @@ def analyse_line(line, rtree):
         if mnh:
             ip = IPv4Address(mnh.group('ip'))
             nexthop = rt.NextHopIPInt(ip, mnh.group('int'))
+            return prefix, nexthop
 
-        return prefix, nexthop
+        mnh = RENHLDP.match(nexthop)
+        if mnh:
+            tunnel_id = int(mnh.group('id'))
+            nexthop = rt.NextHopLDP(tunnel_id)
+            return prefix, nexthop
+
+        return prefix, "Unknown"
 
     else:
         print(line)
@@ -66,7 +74,8 @@ for filename in args.files:
     rtree = analyse_file(filename)
 
     print("\nRoutingTableTree")
-    print("There is %d routes" % rtree.count())
+    num_routes = rtree.count()
+    print("There is %d routes" % num_routes)
 
     list_nh = rtree.list_nexthops()
     print("There are %d nexthops" % len(list_nh))
@@ -76,7 +85,5 @@ for filename in args.files:
     print("")
     print("Remove more specific routes")
     rtree.remove_more_specific()
-    print("There is %d routes left" % rtree.count())
-
-    all_prefixes = (node.route.prefix for node in rtree.all_nodes())
-
+    num_routes_2 = rtree.count()
+    print("There is %d routes left (%d removed)" % (num_routes_2, num_routes - num_routes_2))
