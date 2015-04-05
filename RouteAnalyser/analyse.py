@@ -18,30 +18,32 @@ def analyse_file(filename):
     with open(filename, 'r') as fd:
         for line in fd:
             prefix, nexthop = analyse_line(line, rtable, rtree)
-            route = rt.Route(prefix=prefix)
+            route = rt.Route(prefix=prefix, nexthop=nexthop)
             node = rtree.search(route=route, create=True)
             if not node.route:
                 node.route = route
 
+            route = node.route
+            route.add_nexthop(nexthop)
+
     return rtable, rtree
 
 RELINE = re.compile(r"^[0-9]*\s*(?P<prefix>[0-9./]+)\s*(?P<nexthop>.*)$")
-RENHIPINT = re.compile(r"^(?P<ip>[0-9.]+)\s*(?P<int>\w* [0-9\a-zA-Z]*).*$")
+RENHIPINT = re.compile(r"^(?P<ip>[0-9.]+)\s*(?P<int>\w* [0-9/a-zA-Z]*).*$")
 
 def analyse_line(line, rtable, rtree):
-    m = RELINE.match(line)
-    if m:
-        prefix = m.group('prefix')
-        nexthop = m.group('nexthop')
-        m = RENHIPINT.match(nexthop)
-        destination = None
-        if m:
-            ip = IPv4Address(m.group('ip'))
-            destination = rt.DestinationIPInt(ip, m.group('int'))
+    mline = RELINE.match(line)
+    if mline:
+        prefix = mline.group('prefix')
+        nexthop = mline.group('nexthop')
 
-        nexthop = rt.NextHop(destination)
+        mnh = RENHIPINT.match(nexthop)
+        if mnh:
+            ip = IPv4Address(mnh.group('ip'))
+            nexthop = rt.NextHopIPInt(ip, mnh.group('int'))
 
         return prefix, nexthop
+
     else:
         print(line)
 
@@ -59,6 +61,7 @@ for filename in args.files:
     print("\nRoutingTableTree")
     print("There is %d routes" % rtree.count())
 
+    rtree.draw()
 
     all_prefixes = (node.route.prefix for node in rtree.all_nodes())
 

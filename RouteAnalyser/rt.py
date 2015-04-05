@@ -16,50 +16,29 @@ class NextHop():
     """
     NextHop Class
     """
-
     def __init__(self, destination):
-        self.dest_list = [destination]
-
-    def add_destination(self, destination):
-        """
-        Add a new Destination to this NextHop
-        """
-        self.dest_list.append(destination)
-
-    def __equals__(self, other):
-        for d in self.dest_list:
-            if d not in other.dest_list:
-                return False
-
-        for d in other.dest_list:
-            if d not in self.dest_list:
-                return False
-
-
-class Destination():
-    """
-    Abstraction class used to define a NextHop destination
-    """
-
-    def __init__(self):
         pass
 
     def __equals__(self, other):
-        pass
+        raise NotImplemented()
 
 
-class DestinationIPInt():
+class NextHopIPInt( NextHop ):
     """
-    Destination composed of an IP and an Interface
+    NextHop composed of an IP and an Interface
     """
 
     def __init__(self, ip, interface):
         self.ip = ip
         self.interface = interface
 
-    def __equals__(self, other):
+    def __eq__(self, other):
+        if not isinstance(other, NextHopIPInt):
+            return False
         return self.ip == other.ip and self.interface == other.interface
 
+    def __repr__(self):
+        return "<NextHopIPInt %s '%s'>" % (self.ip, self.interface)
 
 #
 # Route Class
@@ -72,15 +51,38 @@ class Route():
     """
     def __init__(self, prefix=None, nexthop=None):
         self.prefix = None
-        self.nexthop = None
+        self.nexthops = []
 
         if isinstance(prefix, str):
             self.prefix = IPv4Network(prefix)
         if isinstance(prefix, IPv4Network):
             self.prefix = prefix
 
+        if nexthop:
+            self.nexthops.append(nexthop)
+
+    def add_nexthop(self, nexthop):
+        """
+        Add a nexthop to this route
+        """
+        if nexthop not in self.nexthops:
+            self.nexthops.append(nexthop)
+
+    def same_nexthop(self, other):
+        """
+        Check wether this route has the same nexthops as the other route.
+        """
+        for n in self.nexthops:
+            if n not in other.nexthops:
+                return False
+        for n in other.nexthops:
+            if n not in self.nexthops:
+                return False
+        return True
+
+
     def __repr__(self):
-        return "<Route %s>" % str(self.prefix)
+        return "<Route %s, %s>" % (self.prefix, self.nexthops)
 
 #
 # RoutingTable Class
