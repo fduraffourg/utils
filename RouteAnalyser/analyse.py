@@ -14,9 +14,12 @@ from ipaddress import IPv4Address
 def analyse_file(filename):
     rtree = rt.RoutingTableTree()
 
+    i = 0
     with open(filename, 'r') as fd:
         for line in fd:
             prefix, nexthop = analyse_line(line, rtree)
+            if prefix is None:
+                continue
             route = rt.Route(prefix=prefix, nexthop=nexthop)
             node = rtree.search(route=route, create=True)
             if not node.route:
@@ -24,6 +27,10 @@ def analyse_file(filename):
 
             route = node.route
             route.add_nexthop(nexthop)
+
+            if i % 1000 == 0:
+                print("\r%d" % i, end="", flush=True)
+            i += 1
 
     return rtree
 
@@ -45,6 +52,7 @@ def analyse_line(line, rtree):
 
     else:
         print(line)
+        return None, None
 
 
 parser = argparse.ArgumentParser(description='Analyse route table dump')
