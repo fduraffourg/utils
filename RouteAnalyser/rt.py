@@ -178,6 +178,24 @@ class RoutingTableNode():
             if node:
                 node.draw(level + 1)
 
+    def clean(self, recursive=True):
+        """
+        Clean this Node by removing references to leafs Node is they are empty
+        """
+        if recursive:
+            for i in (0, 1):
+                node = leafs[i]
+                if node:
+                    node.clean()
+
+        for i in (0, 1):
+            node = self.leafs[i]
+            if node:
+                if node.leafs[0] is None and node.leafs[1] is None:
+                    if node.route is None:
+                        self.leafs[i] = None
+
+
     def remove_more_specific(self):
         """
         Remove more specific Nodes that are useless
@@ -200,6 +218,36 @@ class RoutingTableNode():
                         return True
 
         return False
+
+    def aggregate(self):
+        """
+        Aggregate prefixes
+        """
+        for i in (0, 1):
+            if self.leafs[i]:
+                self.leafs[i].aggregate()
+
+        if None in [self.leafs[i] for i in (0, 1)]:
+            return
+
+        routes = [self.leafs[i].route for i in (0,1)]
+        if None in routes:
+            return
+
+        if routes[0].nexthops == routes[1].nexthops:
+            if self.route is None:
+                prefix = routes[0].prefix.supernet()
+                nexthops = routes[0].nexthops
+                route = Route(prefix=prefix)
+                route.nexthops = nexthops
+                self.route = route
+            else:
+                self.route.nexthops = routes[0].nexthops
+
+            for i in (0, 1):
+                self.leafs[i].route = None
+
+            self.clean(recursive=False)
 
 
 
@@ -266,6 +314,12 @@ class RoutingTableTree():
         Remove all more specific subnets that have the same next-hop as their parent
         """
         self.root.remove_more_specific()
+
+    def aggregate(self):
+        """
+        Aggregate prefixes that are contigus and that have the same nexthops
+        """
+        self.root.aggregate()
 
     def list_nexthops(self):
         """

@@ -77,13 +77,19 @@ for filename in args.files:
     num_routes = rtree.count()
     print("There is %d routes" % num_routes)
 
-    list_nh = rtree.list_nexthops()
-    print("There are %d nexthops" % len(list_nh))
-    for nh in list_nh:
-        print("    - %s" % nh)
+#    list_nh = rtree.list_nexthops()
+#    print("There are %d nexthops" % len(list_nh))
+#    for nh in list_nh:
+#        print("    - %s" % nh)
 
     print("")
     print("Remove more specific routes")
     rtree.remove_more_specific()
     num_routes_2 = rtree.count()
     print("There is %d routes left (%d removed)" % (num_routes_2, num_routes - num_routes_2))
+
+    print("")
+    print("Aggregate prefixes")
+    rtree.aggregate()
+    num_routes_3 = rtree.count()
+    print("There is %d routes left (%d removed)" % (num_routes_3, num_routes - num_routes_3))
