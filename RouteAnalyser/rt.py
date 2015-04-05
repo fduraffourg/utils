@@ -231,3 +231,15 @@ class RoutingTableTree():
         Remove all more specific subnets that have the same next-hop as their parent
         """
         self.root.remove_more_specific()
+
+    def list_nexthops(self):
+        """
+        Return a list of all NextHops used
+        """
+        list_nh = []
+        for node in self.all_nodes():
+            nh = node.route.nexthops
+            if nh not in list_nh:
+                list_nh.append(nh)
+
+        return list_nh

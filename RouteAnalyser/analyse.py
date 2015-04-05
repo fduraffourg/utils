@@ -60,7 +60,11 @@ for filename in args.files:
     print("\nRoutingTableTree")
     print("There is %d routes" % rtree.count())
 
-    rtree.draw()
+    list_nh = rtree.list_nexthops()
+    print("There are %d nexthops" % len(list_nh))
+    for nh in list_nh:
+        print("    - %s" % nh)
+
 
     all_prefixes = (node.route.prefix for node in rtree.all_nodes())
 
