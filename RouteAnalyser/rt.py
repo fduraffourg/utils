@@ -84,34 +84,6 @@ class Route():
     def __repr__(self):
         return "<Route %s, %s>" % (self.prefix, self.nexthops)
 
-#
-# RoutingTable Class
-#
-
-
-class RoutingTable():
-    def __init__(self):
-        self.routes = dict()
-
-    def add_route(self, prefix, nexthop):
-        if prefix in self.routes:
-            route = self.routes[prefix]
-            route['nexthop'].append(nexthop)
-
-        else:
-            self.routes[prefix] = {
-                'prefix': Prefix(string=prefix),
-                'nexthop': [nexthop],
-                }
-
-    def get_all_routes(self):
-        for _, v in self.routes.items():
-            yield v
-
-    def get_all_prefixes(self):
-        for _, v in self.routes.items():
-            yield v['prefix']
-
 
 #########################
 # RoutingTableTree objs #
