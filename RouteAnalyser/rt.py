@@ -166,6 +166,25 @@ class RoutingTableNode():
         """
         Remove more specific Nodes that are useless
         """
+        for i in (0, 1):
+            if self.leafs[i]:
+                if self.leafs[i].remove_more_specific():
+                    self.leafs[i] = None
+
+        # If this node is a leaf, check whether we can remove it
+        if self.leafs[0] is None and self.leafs[1] is None:
+            if self.route is None:
+                return True
+
+            current = self
+            while current.parent is not None:
+                current = current.parent
+                if current.route is not None:
+                    if current.route.nexthops == self.route.nexthops:
+                        return True
+
+        return False
+
 
 
 class RoutingTableTree():

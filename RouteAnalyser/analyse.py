@@ -65,6 +65,10 @@ for filename in args.files:
     for nh in list_nh:
         print("    - %s" % nh)
 
+    print("")
+    print("Remove more specific routes")
+    rtree.remove_more_specific()
+    print("There is %d routes left" % rtree.count())
 
     all_prefixes = (node.route.prefix for node in rtree.all_nodes())
 
