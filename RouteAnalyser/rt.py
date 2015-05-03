@@ -296,8 +296,9 @@ class RoutingTableNode():
             return
 
         if self.leafs[0] is not None and self.leafs[1] is not None:
-            if self.leafs[0].route.same_nexthop(self.leafs[1].route):
-                self._do_aggregation(self.leafs[0])
+            if self.leafs[0].route is not None and self.leafs[1].route is not None:
+                if self.leafs[0].route.same_nexthop(self.leafs[1].route):
+                    self._do_aggregation(self.leafs[0])
 
 
 
