@@ -265,7 +265,8 @@ class RoutingTableNode():
             self.route.nexthops = model.route.nexthops
 
         for i in (0, 1):
-            self.leafs[i].route = None
+            if self.leafs[i] is not None:
+                self.leafs[i].route = None
 
         self.clean(recursive=False)
 
@@ -275,7 +276,7 @@ class RoutingTableNode():
         """
         for i in (0, 1):
             if self.leafs[i]:
-                self.leafs[i].aggregate()
+                self.leafs[i].aggregate_with_empty()
 
         if self.leafs[0] is None and self.leafs[1] is None:
             return
@@ -287,13 +288,15 @@ class RoutingTableNode():
             if leafi is None or leafi.route is None:
                 continue
 
-            if leafj is not None or leafj.route is not None:
-                continue
+            if leafj is not None:
+                if leafj.route is not None:
+                    continue
 
             self._do_aggregation(leafi)
             return
 
-        if self.leafs[0] is not None and self.leafs[1] is not None and self.leafs[0].route == self.leafs[1].route:
+        if self.leafs[0] is not None and self.leafs[1] is not None:
+            if self.leafs[0].route.same_nexthop(self.leafs[1].route):
                 self._do_aggregation(self.leafs[0])
 
 
