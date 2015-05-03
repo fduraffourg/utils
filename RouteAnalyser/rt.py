@@ -249,6 +249,55 @@ class RoutingTableNode():
 
             self.clean(recursive=False)
 
+    def _do_aggregation(self, model):
+        """
+        Do the aggregation work.
+        Take the nexthop from the 'model' leaf and create or update this node nexthop informations.
+        Then clean the leafs
+        """
+        if self.route is None:
+            prefix = model.route.prefix.supernet()
+            nexthops = model.route.nexthops
+            route = Route(prefix=prefix)
+            route.nexthops = nexthops
+            self.route = route
+        else:
+            self.route.nexthops = model.route.nexthops
+
+        for i in (0, 1):
+            self.leafs[i].route = None
+
+        self.clean(recursive=False)
+
+    def aggregate_with_empty(self):
+        """
+        Aggregate prefixes including empty prefixes
+        """
+        for i in (0, 1):
+            if self.leafs[i]:
+                self.leafs[i].aggregate()
+
+        if self.leafs[0] is None and self.leafs[1] is None:
+            return
+
+        for i in (0, 1):
+            leafi = self.leafs[i]
+            leafj = self.leafs[1-i]
+
+            if leafi is None or leafi.route is None:
+                continue
+
+            if leafj is not None or leafj.route is not None:
+                continue
+
+            self._do_aggregation(leafi)
+            return
+
+        if self.leafs[0] is not None and self.leafs[1] is not None and self.leafs[0].route == self.leafs[1].route:
+                self._do_aggregation(self.leafs[0])
+
+
+
 
 
 class RoutingTableTree():
@@ -320,6 +369,15 @@ class RoutingTableTree():
         Aggregate prefixes that are contigus and that have the same nexthops
         """
         self.root.aggregate()
+
+    def aggregate_with_empty(self):
+        """
+        Aggregate prefixes that are contigus and that have the same nexthops
+
+        If an empty prefix is near a given prefix, aggregate them as if the
+        empty prefix had the same attributes as the none empty one.
+        """
+        self.root.aggregate_with_empty()
 
     def list_nexthops(self):
         """

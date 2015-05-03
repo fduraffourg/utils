@@ -90,6 +90,6 @@ for filename in args.files:
 
     print("")
     print("Aggregate prefixes")
-    rtree.aggregate()
+    rtree.aggregate_with_empty()
     num_routes_3 = rtree.count()
     print("There is %d routes left (%d removed)" % (num_routes_3, num_routes - num_routes_3))
