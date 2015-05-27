@@ -1,0 +1,23 @@
+pkgname=python2-trigger
+pkgver=20150507.ab07dcf
+pkgrel=1
+pkgdesc="Python2 Trigger"
+arch=any
+url=https://github.com/trigger/trigger.git
+depends=('python2' 'python2-pyasn1' 'python2-crypto' 'python2-twisted' 'python2-pytz')
+makedepends=('git' 'python2-setuptools')
+optdepends=('python2-redis' 'python2-ipy')
+
+source=('git://github.com/trigger/trigger.git')
+md5sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/trigger"
+  git log -1 --format='%cd.%h' --date=short | tr -d - | sed 's/-/./'
+}
+
+package() {
+  cd "$srcdir/trigger"
+  python2 setup.py install --prefix=/usr --root=${pkgdir}
+}
+
