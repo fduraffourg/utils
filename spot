@@ -34,17 +34,19 @@ done
 
 if [ $clean -eq 1 ]
 then
-    mpc clear
+    echo "Clean the current playlist"
+    mpc -q clear
 fi
 
 for url in ${urls[@]}
 do
-    mpc add $url
+    echo "Adding $url"
+    mpc -q add $url
 done
 
 if [ $play -eq 1 ]
 then
-    mpc | grep "\[playing\]"
+    mpc | grep -q "\[playing\]"
     if [ $? -eq 1 ]
     then
         echo "Start playing"
