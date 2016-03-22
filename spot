@@ -1,0 +1,53 @@
+#!/bin/sh
+
+clean=0
+play=1
+urls=()
+
+function rewrite_url() {
+    if [[ $raw_url == http*play.spotify.com* ]]
+    then
+        url=${raw_url/http*play.spotify.com/spotify}
+        url=${url//\//:}
+    else
+        # We suppose that this is the ID of an album
+        url="spotify:album:$raw_url"
+    fi
+}
+
+for i in "$@"
+do
+    case $i in
+        -c)
+            clean=1
+            ;;
+        -p)
+            play=0
+            ;;
+        *)
+            raw_url=$i
+            rewrite_url
+            urls+=("$url")
+            ;;
+    esac
+done
+
+if [ $clean -eq 1 ]
+then
+    mpc clear
+fi
+
+for url in ${urls[@]}
+do
+    mpc add $url
+done
+
+if [ $play -eq 1 ]
+then
+    mpc | grep "\[playing\]"
+    if [ $? -eq 1 ]
+    then
+        echo "Start playing"
+        mpc play
+    fi
+fi

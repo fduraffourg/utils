@@ -1,3 +1,5 @@
+- spot: Script that handle Spotify URLs to pass them to mpc
+
 net/rt
 ======
 
