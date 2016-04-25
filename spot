@@ -7,7 +7,8 @@ urls=()
 function rewrite_url() {
     if [[ $raw_url == http*play.spotify.com* ]]
     then
-        url=${raw_url/http*play.spotify.com/spotify}
+        url=${raw_url/user\/*\/collection\/album/album}
+        url=${url/http*play.spotify.com/spotify}
         url=${url//\//:}
     else
         # We suppose that this is the ID of an album
