@@ -9,7 +9,11 @@ from os import rename
 def get_exifdatetime(fn):
     i = Image.open(fn)
     info = i._getexif()
-    return info[306]
+    if 36867 in info:
+        return info[36867]
+    if 306 in info:
+        return info[306]
+    raise NameError("Unable to get datetime from exif")
 
 def get_datetime(str_datetime, fmt="%Y:%m:%d %H:%M:%S"):
     return datetime.strptime(str_datetime, fmt)
@@ -55,7 +59,8 @@ for fn in args.files:
         exifdatetime = get_exifdatetime(fn)
     except:
         print("Unable to parse file %s" % fn)
-    
+        continue
+
 
     # If --exif is set, just print exif and continue to next file
     if args.exif:
@@ -70,7 +75,7 @@ for fn in args.files:
     fn_ext = fn[fn.rfind(".") + 1:].lower()
 
     # Create the new name of the file
-    
+
     base_name = new_dt.strftime("%Y-%m-%d_%H-%M-%S")
     new_fn = base_name + "." + fn_ext
 
@@ -85,5 +90,3 @@ for fn in args.files:
 
     if args.verbose or args.pretend:
         print("Rename %s\t to %s" % (fn, new_fn))
-    
-    
