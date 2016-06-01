@@ -56,10 +56,12 @@ class MainWindow(Gtk.Window):
             if event.keyval == 107:
                 self.select_prev()
                 return True
+            # Key 'e'
             if event.keyval == 101:
                 self.edit_current()
                 return True
         else:
+            # Key Enter
             if event.keyval == 65293:
                 self.end_edit_current()
                 return True
@@ -108,4 +110,5 @@ def run_mainwindow():
     win.show_all()
     Gtk.main()
 
-
+if __name__ == "__main__":
+    run_mainwindow()
