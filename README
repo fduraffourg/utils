@@ -1,8 +1,0 @@
-- spot: Script that handle Spotify URLs to pass them to mpc
-
-net/rt
-======
-
-Tools related to network routing tables
-
-- analyse-routes.py: Make statistics about routing tables
